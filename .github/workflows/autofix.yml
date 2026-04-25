@@ -1,0 +1,52 @@
+name: Autofix
+
+# Runs automatically on PRs from the same repo (not forks).
+# Can also be triggered manually from the Actions tab on any branch.
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [prod, dev]
+
+jobs:
+  ruff-fix:
+    name: ruff fix + format
+    runs-on: ubuntu-latest
+    # Skip forks: they don't have write access to push back commits.
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Check out the PR branch so commits land on it, not on main.
+          ref: ${{ github.head_ref || github.ref_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install ruff
+        run: pip install ruff>=0.8.0
+
+      - name: ruff check --fix
+        run: ruff check --fix .
+
+      - name: ruff format
+        run: ruff format .
+
+      - name: Commit fixes (if any)
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet; then
+            git add -u
+            git commit -m "style: apply ruff autofix"
+            git push
+          else
+            echo "Nothing to fix."
+          fi
