@@ -22,6 +22,7 @@ VALID_DATA = {
 
 # --- LeadCreate structure ---
 
+
 def test_valid_lead_instantiates():
     lead = LeadCreate(**VALID_DATA)
     assert lead.name == "Alice Chen"
@@ -36,6 +37,7 @@ def test_missing_required_field_raises():
 
 
 # --- email ---
+
 
 def test_valid_email_accepted():
     lead = LeadCreate(**{**VALID_DATA, "email": "user@example.com"})
@@ -54,6 +56,7 @@ def test_email_without_domain_raises():
 
 
 # --- phone ---
+
 
 def test_valid_phone_digits_only():
     lead = LeadCreate(**{**VALID_DATA, "phone": "3471234567"})
@@ -78,6 +81,7 @@ def test_phone_with_plus_prefix_raises():
 
 # --- employee_count ---
 
+
 def test_positive_employee_count_accepted():
     lead = LeadCreate(**{**VALID_DATA, "employee_count": 1})
     assert lead.employee_count == 1
@@ -95,6 +99,7 @@ def test_negative_employee_count_raises():
 
 
 # --- LeadRead ---
+
 
 def test_lead_read_requires_id_and_created_at():
     from datetime import datetime

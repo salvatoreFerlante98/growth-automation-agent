@@ -2,6 +2,7 @@
 
 SQLAlchemy ORM table and Pydantic schema for a sales lead.
 """
+
 from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, field_validator
@@ -10,6 +11,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 class Base(DeclarativeBase):
     pass
+
 
 # TODO: Add relationship to DecisionLog once that model exists
 class LeadORM(Base):
