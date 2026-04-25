@@ -11,4 +11,4 @@ from pydantic import BaseModel
 class ScoringResult(BaseModel):
     lead_id: int
     score: float  # TODO: constrain to 0.0–100.0 with Field(ge=0, le=100)
-    tier: str     # TODO: derive tier (hot/warm/cold) from score thresholds
+    tier: str  # TODO: derive tier (hot/warm/cold) from score thresholds

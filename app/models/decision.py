@@ -17,6 +17,6 @@ class DecisionLogORM(Base):
     __tablename__ = "decision_logs"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    lead_id: Mapped[int]                     # TODO: make this a FK
-    action: Mapped[str]                      # e.g. "enrich", "score", "recommend"
+    lead_id: Mapped[int]  # TODO: make this a FK
+    action: Mapped[str]  # e.g. "enrich", "score", "recommend"
     created_at: Mapped[datetime]
