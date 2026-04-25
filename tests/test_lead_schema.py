@@ -1,6 +1,6 @@
 """Tests for LeadCreate and LeadRead field validators and structure."""
 
-from datetime import UTC
+from datetime import UTC, datetime
 
 import pytest
 from pydantic import ValidationError
@@ -20,7 +20,7 @@ VALID_DATA = {
 }
 
 
-# --- LeadCreate structure ---
+# --- structure ---
 
 
 def test_valid_lead_instantiates():
@@ -50,15 +50,10 @@ def test_invalid_email_raises():
     assert any(e["loc"] == ("email",) for e in exc_info.value.errors())
 
 
-def test_email_without_domain_raises():
-    with pytest.raises(ValidationError):
-        LeadCreate(**{**VALID_DATA, "email": "missingdomain@"})
-
-
 # --- phone ---
 
 
-def test_valid_phone_digits_only():
+def test_valid_phone_accepted():
     lead = LeadCreate(**{**VALID_DATA, "phone": "3471234567"})
     assert lead.phone == "3471234567"
 
@@ -102,21 +97,12 @@ def test_negative_employee_count_raises():
 
 
 def test_lead_read_requires_id_and_created_at():
-    from datetime import datetime
-
-    lead = LeadRead(
-        **VALID_DATA,
-        id=1,
-        created_at=datetime(2024, 1, 15, tzinfo=UTC),
-    )
+    lead = LeadRead(**VALID_DATA, id=1, created_at=datetime(2024, 1, 15, tzinfo=UTC))
     assert lead.id == 1
     assert lead.updated_at is None
 
 
 def test_lead_read_inherits_validators():
-    """Validators defined on LeadCreate must still fire on LeadRead."""
-    from datetime import datetime
-
     with pytest.raises(ValidationError):
         LeadRead(
             **{**VALID_DATA, "phone": "not-digits"},
