@@ -6,6 +6,7 @@ Records every automated or human decision made for a lead.
 from datetime import datetime
 
 from sqlalchemy.orm import Mapped, mapped_column
+
 from app.models.lead import Base
 
 

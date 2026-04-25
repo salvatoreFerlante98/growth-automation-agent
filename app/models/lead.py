@@ -3,8 +3,8 @@
 SQLAlchemy ORM table and Pydantic schema for a sales lead.
 """
 
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from pydantic import BaseModel
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
 class Base(DeclarativeBase):

@@ -3,7 +3,6 @@
 Reads a CSV file and yields raw lead dicts for further validation.
 """
 
-import csv
 from pathlib import Path
 
 
