@@ -48,14 +48,14 @@ class LeadCreate(BaseModel):
     @classmethod
     def phone_must_be_valid(cls, v: str) -> str:
         if not v.isdigit():
-            raise ValueError("Phone number must contain digits only")
+            raise ValueError(f"phone must contain digits only, got: '{v}'")
         return v
 
     @field_validator("employee_count")
     @classmethod
     def employee_count_must_be_positive(cls, v: int) -> int:
         if v <= 0:
-            raise ValueError("Employee count must be positive")
+            raise ValueError(f"employee_count must be positive, got: {v}")
         return v
 
 
