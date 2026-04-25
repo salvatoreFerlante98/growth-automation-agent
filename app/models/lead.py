@@ -2,8 +2,9 @@
 
 SQLAlchemy ORM table and Pydantic schema for a sales lead.
 """
+from datetime import datetime
 
-from pydantic import BaseModel, ValidationError, field_validator
+from pydantic import BaseModel, EmailStr, field_validator
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -24,23 +25,43 @@ class LeadORM(Base):
     industry: Mapped[str] = mapped_column(nullable=False)
     employee_count: Mapped[int] = mapped_column(nullable=False)
     source: Mapped[str] = mapped_column(nullable=False)
-    created_at: Mapped[str] = mapped_column(nullable=False)
-    updated_at: Mapped[str] = mapped_column(nullable=False)
+    created_at: Mapped[datetime] = mapped_column(nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(nullable=False)
 
 
-# TODO: Add field validators (email normalisation, phone stripping, …)
-# TODO: Add a LeadCreate schema (no id) and a LeadRead schema (with id)
-class LeadSchema(BaseModel):
-    id: int | None = None
-    name: str | None = None
-    company: str | None = None
-    email: str | None = None
-    phone: str | None = None
-    role: str | None = None
-    company_size: str | None = None
-    industry: str | None = None
-    employee_count: int | None = None
-    source: str | None = None
-    created_at: str | None = None
+class LeadCreate(BaseModel):
+    """Input schema — used for CSV ingestion and API creation requests."""
+
+    name: str
+    company: str
+    email: EmailStr
+    phone: str
+    role: str
+    company_size: str
+    industry: str
+    employee_count: int
+    source: str
+
+    @field_validator("phone")
+    @classmethod
+    def phone_must_be_valid(cls, v: str) -> str:
+        if not v.isdigit():
+            raise ValueError("Phone number must contain digits only")
+        return v
+
+    @field_validator("employee_count")
+    @classmethod
+    def employee_count_must_be_positive(cls, v: int) -> int:
+        if v <= 0:
+            raise ValueError("Employee count must be positive")
+        return v
+
+
+class LeadRead(LeadCreate):
+    """Output schema — returned by API responses, constructed from ORM rows."""
+
+    id: int
+    created_at: datetime
+    updated_at: datetime | None = None
 
     model_config = {"from_attributes": True}
