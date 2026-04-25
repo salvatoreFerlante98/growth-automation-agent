@@ -34,11 +34,16 @@ def load_leads_from_csv(path: Path) -> LoadResult:
                     result.valid.append(LeadCreate.model_validate(normalised))
                 except ValidationError as exc:
                     messages = "; ".join(f"{e['loc'][0]}: {e['msg']}" for e in exc.errors())
-                    AppLogger.warning(LogCode.WRN_CSV_ROW_SKIPPED, f"Line {line_number}: {messages}")
+                    AppLogger.warning(
+                        LogCode.WRN_CSV_ROW_SKIPPED, f"Line {line_number}: {messages}"
+                    )
                     result.errors.append({"line": line_number, "errors": exc.errors()})
 
     except OSError as exc:
         AppLogger.raise_error(LogCode.ERR_CSV_PARSE, f"Cannot read {path}: {exc}")
 
-    AppLogger.info(LogCode.INF_CSV_LOADED, f"{path.name}: {len(result.valid)} loaded, {len(result.errors)} skipped")
+    AppLogger.info(
+        LogCode.INF_CSV_LOADED,
+        f"{path.name}: {len(result.valid)} loaded, {len(result.errors)} skipped"
+    )
     return result

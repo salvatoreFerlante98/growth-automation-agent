@@ -99,7 +99,11 @@ def test_lead_read_requires_id_and_created_at():
 
 def test_lead_read_inherits_validators():
     with pytest.raises(ValidationError):
-        LeadRead(**{**VALID_DATA, "phone": "not-digits"}, id=1, created_at=datetime(2024, 1, 15, tzinfo=UTC))
+        LeadRead(
+            **{**VALID_DATA, "phone": "not-digits"},
+            id=1,
+            created_at=datetime(2024, 1, 15, tzinfo=UTC)
+        )
 
 
 def test_lead_read_from_attributes_enabled():

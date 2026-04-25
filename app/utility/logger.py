@@ -14,7 +14,6 @@ Usage:
 import logging
 
 from app.utility.codes import LogCode
-from app.utility.errors import AppError
 
 _logger = logging.getLogger("growth_agent")
 
@@ -22,7 +21,10 @@ _logger = logging.getLogger("growth_agent")
 def configure_logging(level: int = logging.INFO) -> None:
     """Configure the root logger. Call once at startup."""
     handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)-8s %(message)s", datefmt="%H:%M:%S"))
+    handler.setFormatter(logging.Formatter(
+        "%(asctime)s %(levelname)-8s %(message)s",
+        datefmt="%H:%M:%S"
+    ))
     _logger.setLevel(level)
     _logger.addHandler(handler)
     _logger.propagate = False
@@ -49,4 +51,4 @@ class AppLogger:
     def raise_error(code: LogCode, detail: str = "") -> None:
         """Log at ERROR level and raise AppError in one call."""
         _logger.error("[%s] %s", code, detail)
-        raise AppError(code, detail)
+        raise Exception(detail)
