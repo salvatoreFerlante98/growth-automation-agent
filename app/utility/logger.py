@@ -21,10 +21,9 @@ _logger = logging.getLogger("growth_agent")
 def configure_logging(level: int = logging.INFO) -> None:
     """Configure the root logger. Call once at startup."""
     handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter(
-        "%(asctime)s %(levelname)-8s %(message)s",
-        datefmt="%H:%M:%S"
-    ))
+    handler.setFormatter(
+        logging.Formatter("%(asctime)s %(levelname)-8s %(message)s", datefmt="%H:%M:%S")
+    )
     _logger.setLevel(level)
     _logger.addHandler(handler)
     _logger.propagate = False

@@ -44,6 +44,6 @@ def load_leads_from_csv(path: Path) -> LoadResult:
 
     AppLogger.info(
         LogCode.INF_CSV_LOADED,
-        f"{path.name}: {len(result.valid)} loaded, {len(result.errors)} skipped"
+        f"{path.name}: {len(result.valid)} loaded, {len(result.errors)} skipped",
     )
     return result
