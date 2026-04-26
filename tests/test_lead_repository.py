@@ -38,6 +38,7 @@ async def session():
 
 # --- create ---
 
+
 async def test_create_returns_orm_row(session):
     lead = await repo.create(session, make_lead())
     assert lead.id is not None
@@ -59,12 +60,14 @@ async def test_create_persists_to_db(session):
 
 # --- get_by_id ---
 
+
 async def test_get_by_id_returns_none_when_missing(session):
     result = await repo.get_by_id(session, 999)
     assert result is None
 
 
 # --- list_all ---
+
 
 async def test_list_all_returns_created_leads(session):
     await repo.create(session, make_lead(email="a@test.com"))
@@ -88,6 +91,7 @@ async def test_list_all_offset(session):
 
 
 # --- upsert ---
+
 
 async def test_upsert_creates_when_id_not_found(session):
     lead = await repo.upsert(session, make_lead(id=999))
@@ -132,6 +136,7 @@ async def test_upsert_refreshes_updated_at(session):
 
 
 # --- delete ---
+
 
 async def test_delete_returns_true_when_found(session):
     created = await repo.create(session, make_lead())

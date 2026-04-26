@@ -2,6 +2,7 @@
 
 All database access for leads goes through this module.
 """
+
 from datetime import datetime
 
 from sqlalchemy import select
@@ -37,6 +38,7 @@ async def get_by_id(session: AsyncSession, lead_id: int) -> LeadORM | None:
     )
     result = await session.execute(stmt)
     return result.scalars().first()
+
 
 async def list_all(session: AsyncSession, *, limit: int, offset: int) -> list[LeadORM]:
     stmt = select(LeadORM).limit(limit).offset(offset)
