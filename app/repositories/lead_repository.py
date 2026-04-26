@@ -8,10 +8,10 @@ from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.lead import LeadORM, LeadRead
+from app.models.lead import LeadCreate, LeadORM, LeadRead
 
 
-async def create(session: AsyncSession, lead: LeadRead) -> LeadORM:
+async def create(session: AsyncSession, lead: LeadCreate) -> LeadORM:
     now = datetime.now()
     db_lead = LeadORM(
         name=lead.name,

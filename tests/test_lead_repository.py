@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
-from app.models.lead import Base, LeadRead
+from app.models.lead import Base, LeadCreate, LeadRead
 from app.repositories import lead_repository as repo
 
 SAMPLE = {
@@ -21,7 +21,11 @@ SAMPLE = {
 }
 
 
-def make_lead(**overrides) -> LeadRead:
+def make_lead_create(**overrides) -> LeadCreate:
+    return LeadCreate(**{**SAMPLE, **overrides})
+
+
+def make_lead_read(**overrides) -> LeadRead:
     lead_id = overrides.pop("id", 1)
     return LeadRead(**{**SAMPLE, **overrides}, id=lead_id, created_at=datetime.now(UTC))
 
@@ -40,19 +44,19 @@ async def session():
 
 
 async def test_create_returns_orm_row(session):
-    lead = await repo.create(session, make_lead())
+    lead = await repo.create(session, make_lead_create())
     assert lead.id is not None
     assert lead.name == "Alice Chen"
 
 
 async def test_create_sets_timestamps(session):
-    lead = await repo.create(session, make_lead())
+    lead = await repo.create(session, make_lead_create())
     assert lead.created_at is not None
     assert lead.updated_at is not None
 
 
 async def test_create_persists_to_db(session):
-    created = await repo.create(session, make_lead())
+    created = await repo.create(session, make_lead_create())
     fetched = await repo.get_by_id(session, created.id)
     assert fetched is not None
     assert fetched.email == "alice.chen@vertexio.com"
@@ -70,22 +74,22 @@ async def test_get_by_id_returns_none_when_missing(session):
 
 
 async def test_list_all_returns_created_leads(session):
-    await repo.create(session, make_lead(email="a@test.com"))
-    await repo.create(session, make_lead(email="b@test.com"))
+    await repo.create(session, make_lead_create(email="a@test.com"))
+    await repo.create(session, make_lead_create(email="b@test.com"))
     leads = await repo.list_all(session, limit=10, offset=0)
     assert len(leads) == 2
 
 
 async def test_list_all_limit(session):
     for i in range(5):
-        await repo.create(session, make_lead(email=f"lead{i}@test.com"))
+        await repo.create(session, make_lead_create(email=f"lead{i}@test.com"))
     leads = await repo.list_all(session, limit=3, offset=0)
     assert len(leads) == 3
 
 
 async def test_list_all_offset(session):
     for i in range(4):
-        await repo.create(session, make_lead(email=f"lead{i}@test.com"))
+        await repo.create(session, make_lead_create(email=f"lead{i}@test.com"))
     leads = await repo.list_all(session, limit=10, offset=3)
     assert len(leads) == 1
 
@@ -94,13 +98,13 @@ async def test_list_all_offset(session):
 
 
 async def test_upsert_creates_when_id_not_found(session):
-    lead = await repo.upsert(session, make_lead(id=999))
+    lead = await repo.upsert(session, make_lead_read(id=999))
     assert lead.id is not None
     assert lead.name == "Alice Chen"
 
 
 async def test_upsert_updates_existing_lead(session):
-    created = await repo.create(session, make_lead())
+    created = await repo.create(session, make_lead_create())
     updated_data = LeadRead(
         **{**SAMPLE, "name": "Alice Updated"},
         id=created.id,
@@ -112,7 +116,7 @@ async def test_upsert_updates_existing_lead(session):
 
 
 async def test_upsert_preserves_created_at(session):
-    created = await repo.create(session, make_lead())
+    created = await repo.create(session, make_lead_create())
     original_created_at = created.created_at
     updated_data = LeadRead(
         **{**SAMPLE, "name": "Alice Updated"},
@@ -124,7 +128,7 @@ async def test_upsert_preserves_created_at(session):
 
 
 async def test_upsert_refreshes_updated_at(session):
-    created = await repo.create(session, make_lead())
+    created = await repo.create(session, make_lead_create())
     original_updated_at = created.updated_at
     updated_data = LeadRead(
         **{**SAMPLE, "name": "Alice Updated"},
@@ -139,13 +143,13 @@ async def test_upsert_refreshes_updated_at(session):
 
 
 async def test_delete_returns_true_when_found(session):
-    created = await repo.create(session, make_lead())
+    created = await repo.create(session, make_lead_create())
     result = await repo.delete(session, created.id)
     assert result is True
 
 
 async def test_delete_removes_row_from_db(session):
-    created = await repo.create(session, make_lead())
+    created = await repo.create(session, make_lead_create())
     await repo.delete(session, created.id)
     assert await repo.get_by_id(session, created.id) is None
 
