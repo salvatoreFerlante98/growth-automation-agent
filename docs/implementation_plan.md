@@ -1,39 +1,17 @@
 # Implementation Plan
 
-Each ticket below is a small, self-contained coding task.
+Each ticket is a small, self-contained coding task.
 Implement them in order — later tickets depend on earlier ones.
 
 ---
 
-## Phase 2 — Domain model
+## Phase 2 — Domain model ✅
 
-### TICKET-01: Define `LeadORM` columns
+### TICKET-01 ✅ Define `LeadORM` columns
+`app/models/lead.py` — done. Columns: `name`, `company`, `email`, `phone`, `role`, `company_size`, `industry`, `employee_count`, `source`, `created_at`, `updated_at`.
 
-**File:** `app/models/lead.py`
-
-Add mapped columns to `LeadORM`:
-
-- `first_name: Mapped[str]`
-- `last_name: Mapped[str]`
-- `email: Mapped[str]` (unique)
-- `company: Mapped[str]`
-- `title: Mapped[str | None]`
-- `industry: Mapped[str | None]`
-- `employee_count: Mapped[int | None]`
-- `country: Mapped[str | None]`
-- `linkedin_url: Mapped[str | None]`
-- `created_at: Mapped[datetime]` with `default=datetime.utcnow`
-
----
-
-### TICKET-02: Define `LeadCreate` and `LeadRead` Pydantic schemas
-
-**File:** `app/models/lead.py`
-
-- `LeadCreate` — all fields except `id` and `created_at`; add an `EmailStr` validator for `email`
-- `LeadRead` — all fields including `id` and `created_at`; `model_config = {"from_attributes": True}`
-
----
+### TICKET-02 ✅ Define `LeadCreate` and `LeadRead` schemas
+`app/models/lead.py` — done. `LeadCreate` for input (with validators), `LeadRead(LeadCreate)` for output.
 
 ### TICKET-03: Extend `ScoringResult`
 
@@ -41,152 +19,144 @@ Add mapped columns to `LeadORM`:
 
 Add:
 - `fit_score: float` — 0–100, firmographic and role alignment
-- `intent_score: float` — 0–100, placeholder (always 50 until intent data exists)
-- `composite_score: float` — weighted average of sub-scores
+- `intent_score: float` — 0–100, placeholder (always 50)
+- `composite_score: float` — weighted average
 - `tier: Literal["hot", "warm", "cold"]` — derived from composite_score
 - `reasons: list[str]` — human-readable explanation lines
 
 Constrain all floats with `Field(ge=0.0, le=100.0)`.
 
----
-
 ### TICKET-04: Wire up the async database engine
 
 **File:** `app/database.py` *(create this file)*
 
-- Create an `async_engine` using `create_async_engine` with a `DATABASE_URL` setting (default: `sqlite+aiosqlite:///./leads.db`)
-- Create an `AsyncSessionLocal` session factory
-- Add a `get_session()` async generator for FastAPI dependency injection
-- Add a `create_tables()` coroutine that calls `Base.metadata.create_all`
+- `async_engine` via `create_async_engine` — default URL: `sqlite+aiosqlite:///./leads.db`
+- `AsyncSessionLocal` session factory
+- `get_session()` async generator for FastAPI dependency injection
+- `create_tables()` coroutine that calls `Base.metadata.create_all`
 
-Call `create_tables()` from `app/main.py` on startup using `@app.on_event("startup")`.
+Call `create_tables()` from `app/main.py` inside the existing `lifespan` context manager.
 
 ---
 
-## Phase 3 — CSV ingestion
+## Phase 3 — CSV ingestion + import ✅
 
-### TICKET-05: Implement `load_leads_from_csv`
+### TICKET-05 ✅ Implement `load_leads_from_csv`
+`app/loaders/csv_loader.py` — done. Normalises columns, validates against `LeadCreate`, returns `LoadResult(valid, errors)`.
 
-**File:** `app/loaders/csv_loader.py`
+### TICKET-06 ✅ Implement `lead_repository` CRUD
+`app/repositories/lead_repository.py` — done. `create`, `get_by_id`, `list_all`, `upsert`, `delete`.
 
-- Open the file, use `csv.DictReader`
-- Strip whitespace from all keys and values
-- Validate each row against `LeadCreate`; catch `ValidationError`
-- Return a simple result object (or named tuple) with `valid: list[LeadCreate]` and `errors: list[dict]`
-  - Each error entry should include the row number and the validation message
+### TICKET-07 ✅ Implement `import_leads` use case
+`app/services/lead_import.py` — done. Orchestrates loader → repository, returns `ImportResult(imported, skipped, errors)`.
 
 ---
 
 ## Phase 4 — Enrichment
 
-### TICKET-06: Implement mock enrichment
+### TICKET-08: Implement mock enrichment
 
 **File:** `app/services/enrichment.py`
 
-Rules (apply only when the field is `None` or blank):
-- `industry`: infer from a small hardcoded keyword map on `company` name, default to `"Unknown"`
-- `employee_count`: default to `50`
-- `country`: default to `"US"`
+Rules (apply only when the field is blank):
+- `industry`: infer from a hardcoded keyword map on `company` name, default `"Unknown"`
+- `employee_count`: default `50`
+- `source`: default `"enriched"`
 
-Return a new `LeadCreate` (do not mutate the input).
+Return a new `LeadCreate` — do not mutate the input.
+Add tests in `tests/test_enrichment.py`.
 
 ---
 
 ## Phase 5 — Scoring
 
-### TICKET-07: Implement `score_lead`
+### TICKET-09: Extend `ScoringResult` (see TICKET-03 above)
+
+### TICKET-10: Implement `score_lead`
 
 **File:** `app/services/scoring.py`
 
-Scoring rules (deterministic):
+Scoring rules (deterministic, no randomness):
 
 **Fit score** (0–100):
 - `+30` if `employee_count` is between 50 and 1000
-- `+25` if `title` contains "VP", "Director", "Head", "CTO", "Founder", or "C-level"
-- `+20` if `industry` is in a defined target-industry list (e.g. SaaS, Fintech, DevTools)
-- `+10` if `country` is `"US"`, `"UK"`, or `"CA"`
-- Up to `+15` spare — reserve for future signals
+- `+25` if `role` contains "VP", "Director", "Head", "CTO", "Founder"
+- `+20` if `industry` is in a target list (SaaS, Fintech, DevTools, …)
+- `+15` if `company_size` is `"medium"` or `"large"`
 
-**Composite score:** `fit_score * 0.7 + intent_score * 0.3` (intent is always 50 for now)
+**Composite score:** `fit_score * 0.7 + intent_score * 0.3` (intent defaults to 50)
 
-**Tier:**
-- `hot` if composite >= 70
-- `warm` if composite >= 40
-- `cold` otherwise
+**Tier:** hot ≥ 70 / warm ≥ 40 / cold < 40
 
-Collect a `reasons` list explaining which rules fired.
+Add tests in `tests/test_scoring.py`.
 
 ---
 
 ## Phase 6 — Recommendations
 
-### TICKET-08: Implement `recommend_next_action`
+### TICKET-11: Implement `recommend_next_action`
 
 **File:** `app/services/recommendation.py`
 
-Define a `Recommendation` dataclass:
-- `action: str` — e.g. `"schedule_call"`, `"send_email"`, `"add_to_nurture"`
-- `channel: str` — `"phone"`, `"email"`, `"crm_sequence"`
-- `reason: str` — one-line explanation
+Define a `Recommendation` dataclass: `action`, `channel`, `reason`.
 
 Mapping:
-- `hot` → `schedule_call` via `phone`
-- `warm` → `send_email` via `email`
-- `cold` → `add_to_nurture` via `crm_sequence`
+- `hot` → `schedule_call` / `phone`
+- `warm` → `send_email` / `email`
+- `cold` → `add_to_nurture` / `crm_sequence`
 
-Override: if `employee_count > 500` and tier is `warm`, escalate to `schedule_call`.
+Override: `employee_count > 500` and tier `warm` → escalate to `schedule_call`.
+Add tests in `tests/test_recommendation.py`.
 
 ---
 
 ## Phase 7 — Decision log
 
-### TICKET-09: Persist decisions
+### TICKET-12: Implement `DecisionLogORM` columns
 
-**File:** `app/repositories/decision_repository.py` *(create this file)*
+**File:** `app/models/decision.py`
 
-- Add a `create_decision(session, lead_id, action, actor="system")` function
-- `actor` should be `"system"` for automated decisions and `"human"` for manual overrides
+- Add FK to `leads.id`
+- Columns: `action: str`, `actor: str` (`"system"` | `"human"`), `reason: str | None`, `created_at: datetime`
 
-Call `create_decision` from the scoring and recommendation services after each run.
+### TICKET-13: Add `decision_repository`
+
+**File:** `app/repositories/decision_repository.py` *(create)*
+
+- `create_decision(session, lead_id, action, actor="system", reason=None) -> DecisionLogORM`
+
+Call from scoring and recommendation services after each run.
 
 ---
 
 ## Phase 8 — API routes
 
-### TICKET-10: POST `/leads/ingest`
+### TICKET-14: `POST /leads/ingest`
 
-**File:** `app/main.py` (or a new `app/api/leads.py` router if the file grows large)
+Accept a multipart CSV upload, call `import_leads`, return `ImportResult` as JSON.
 
-- Accept a multipart CSV upload
-- Call `load_leads_from_csv`, then `enrich_lead`, then `create` (repository)
-- Return `{"imported": N, "errors": [...]}`
+### TICKET-15: `GET /leads`
 
-### TICKET-11: GET `/leads/{id}/score`
+Paginated list — `?limit=20&offset=0`. Returns `list[LeadRead]`.
 
-- Load the lead from the DB
-- Call `score_lead` and `recommend_next_action`
-- Return the `ScoringResult` + `Recommendation` as JSON
+### TICKET-16: `GET /leads/{id}/score`
 
-### TICKET-12: GET `/leads`
-
-- Paginated list of leads (`?limit=20&offset=0`)
-- Return `list[LeadRead]`
+Load lead → enrich → score → recommend. Returns `ScoringResult` + `Recommendation` as JSON.
 
 ---
 
-## Phase 9 — LLM layer (optional, later)
+## Phase 9 — LLM layer (optional)
 
-### TICKET-13: Define a provider interface
+### TICKET-17: Define a provider interface
 
-**File:** `app/llm/base.py` *(create this file)*
+**File:** `app/llm/base.py` *(create)*
 
-- Define an abstract `LLMProvider` with a single `complete(prompt: str) -> str` method
-- Implement a `NoOpProvider` that raises `NotImplementedError` with a clear message
+Abstract `LLMProvider` with `complete(prompt: str) -> str`.
+Implement `NoOpProvider` that raises `NotImplementedError`.
 
-### TICKET-14: Optional enrichment via LLM
+### TICKET-18: Optional LLM enrichment
 
 **File:** `app/services/enrichment.py`
 
-- Add an optional `provider: LLMProvider | None = None` parameter to `enrich_lead`
-- If a provider is passed and a field is still missing after rule-based enrichment, call the provider
-- Guard behind a config flag so CI never requires an API key
+Add `provider: LLMProvider | None = None` to `enrich_lead`.
+Guard behind a config flag — CI must never require an API key.
