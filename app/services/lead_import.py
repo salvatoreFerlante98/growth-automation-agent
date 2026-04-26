@@ -1,10 +1,10 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from app.repositories import lead_repository
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.loaders.csv_loader import load_leads_from_csv
+from app.repositories import lead_repository
 from app.utility.codes import LogCode
 from app.utility.logger import AppLogger
 
@@ -32,8 +32,6 @@ async def import_leads(session: AsyncSession, path: Path = DEFAULT_CSV) -> Impor
 
     AppLogger.info(
         LogCode.INF_LEAD_CREATED,
-        f"{path.name}: {result.imported} imported, {result.skipped} skipped"
+        f"{path.name}: {result.imported} imported, {result.skipped} skipped",
     )
     return result
-
-
