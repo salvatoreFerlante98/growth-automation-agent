@@ -12,35 +12,45 @@ It is designed as a portfolio and experimental backend project built around prod
 
 ```
 app/
-  main.py              — FastAPI application entry point
+  main.py                    — FastAPI app, lifespan, /health endpoint
   models/
-    lead.py            — Lead ORM (SQLAlchemy) + Pydantic schema
-    scoring.py         — ScoringResult value object
-    decision.py        — DecisionLog ORM row
+    lead.py                  — LeadORM (SQLAlchemy), LeadCreate, LeadRead (Pydantic)
+    scoring.py               — ScoringResult value object
+    decision.py              — DecisionLogORM
   services/
-    scoring.py         — deterministic lead scoring logic
-    enrichment.py      — mock enrichment (fills missing fields)
-    recommendation.py  — maps score tier to next action
+    lead_import.py           — import use case: CSV → validate → persist
+    scoring.py               — deterministic lead scoring (stub)
+    enrichment.py            — mock enrichment (stub)
+    recommendation.py        — next-action recommendation (stub)
   repositories/
-    lead_repository.py — all DB access for leads
+    lead_repository.py       — CRUD: create, get_by_id, list_all, upsert, delete
   loaders/
-    csv_loader.py      — reads and validates a CSV file of leads
+    csv_loader.py            — reads CSV, normalises rows, validates against LeadCreate
+  utility/
+    codes.py                 — LogCode registry (INF / WRN / ERR / DBG)
+    logger.py                — AppLogger static methods + configure_logging()
 data/
-  sample_leads.csv     — five realistic fake leads for local testing
+  sample_leads.csv           — five realistic fake leads for local testing
 tests/
-  test_app.py          — smoke tests (import, /health)
+  test_app.py                — smoke tests (import, /health)
+  test_lead_schema.py        — LeadCreate / LeadRead validator tests
+  test_lead_repository.py    — repository CRUD against in-memory SQLite
+  test_lead_import.py        — end-to-end import use case tests
 docs/
-  implementation_plan.md — ordered coding tickets
+  architecture.md            — layer responsibilities and design decisions
+  error_handling_flow.md     — error and logging conventions
+  implementation_plan.md     — ordered coding tickets
 ```
 
-Layers (loosely):
+Layers:
 
 | Folder | Responsibility |
-|--------|---------------|
+|--------|----------------|
 | `models/` | Domain entities, value objects, ORM mappings |
-| `services/` | Application logic (scoring, enrichment, recommendations) |
-| `repositories/` | Persistence (SQLAlchemy async sessions) |
+| `services/` | Application use cases and business logic |
+| `repositories/` | All database access (SQLAlchemy async) |
 | `loaders/` | Infrastructure I/O (CSV ingestion) |
+| `utility/` | Cross-cutting: structured logging, error codes |
 | `main.py` | API layer (FastAPI routes) |
 
 ---
@@ -68,24 +78,22 @@ pytest
 
 ---
 
-## Planned implementation phases
+## Implementation phases
 
-| Phase | Description |
-|-------|-------------|
-| 1 — Foundation | Project scaffold, `/health` endpoint, CI *(current)* |
-| 2 — Domain model | Fill out `LeadORM` columns, Pydantic schemas, DB migration |
-| 3 — CSV ingestion | Implement `csv_loader.py`, row validation, error reporting |
-| 4 — Enrichment | Mock enrichment rules in `enrichment.py` |
-| 5 — Scoring | Deterministic scoring algorithm in `scoring.py` |
-| 6 — Recommendations | Tier-to-action mapping in `recommendation.py` |
-| 7 — Decision log | Persist every action to `decision_logs` |
-| 8 — API routes | Expose ingestion, scoring, and recommendation via REST |
-| 9 — LLM layer (optional) | Provider-abstracted LLM enrichment behind a feature flag |
+| Phase | Description | Status |
+|-------|-------------|--------|
+| 1 — Foundation | Project scaffold, `/health` endpoint, CI | ✅ Done |
+| 2 — Domain model | `LeadORM`, `LeadCreate`, `LeadRead`, timestamps | ✅ Done |
+| 3 — CSV ingestion + import | `csv_loader`, `lead_repository` CRUD, `lead_import` use case | ✅ Done |
+| 4 — Enrichment | Mock enrichment rules in `enrichment.py` | 🔲 Next |
+| 5 — Scoring | Deterministic scoring algorithm in `scoring.py` | 🔲 Pending |
+| 6 — Recommendations | Tier-to-action mapping in `recommendation.py` | 🔲 Pending |
+| 7 — Decision log | Persist every action to `decision_logs` | 🔲 Pending |
+| 8 — API routes | Expose ingestion, scoring, recommendation via REST | 🔲 Pending |
+| 9 — LLM layer (optional) | Provider-abstracted LLM enrichment behind a feature flag | 🔲 Pending |
 
 ---
 
-## Manual coding roadmap
+## Coding roadmap
 
 See [`docs/implementation_plan.md`](docs/implementation_plan.md) for individual coding tickets.
-
-Each ticket is small and self-contained so the project owner can implement them incrementally.
