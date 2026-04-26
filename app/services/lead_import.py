@@ -1,12 +1,12 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from app.repositories import lead_repository
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.loaders.csv_loader import load_leads_from_csv
 from app.utility.codes import LogCode
 from app.utility.logger import AppLogger
-from repositories import lead_repository
 
 DEFAULT_CSV = Path("data/sample_leads.csv")
 
@@ -30,7 +30,10 @@ async def import_leads(session: AsyncSession, path: Path = DEFAULT_CSV) -> Impor
             AppLogger.error(LogCode.ERR_DB_WRITE, f"Failed to persist lead {lead.email}: {exc}")
             result.errors.append({"lead": lead.email, "error": str(exc)})
 
-    AppLogger.info(LogCode.INF_LEAD_CREATED, f"{path.name}: {result.imported} imported, {result.skipped} skipped")
+    AppLogger.info(
+        LogCode.INF_LEAD_CREATED,
+        f"{path.name}: {result.imported} imported, {result.skipped} skipped"
+    )
     return result
 
 

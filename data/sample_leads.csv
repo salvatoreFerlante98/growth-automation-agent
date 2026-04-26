@@ -1,6 +1,6 @@
-first_name,last_name,email,company,title,industry,employee_count,country,linkedin_url
-Alice,Chen,alice.chen@vertexio.com,Vertexio,VP of Sales,SaaS,320,US,https://linkedin.com/in/alicechen
-Marco,Rossi,m.rossi@bridgelabs.io,BridgeLabs,Head of Growth,Fintech,85,IT,https://linkedin.com/in/marcorossi
-Priya,Mehta,priya.mehta@cloudnest.co,CloudNest,CTO,DevTools,210,IN,https://linkedin.com/in/priyamehta
-James,Okafor,j.okafor@tradepulse.ng,TradePulse,Founder,E-Commerce,12,NG,https://linkedin.com/in/jamesokafor
-Sara,Lindqvist,sara.l@nordicflow.se,NordicFlow,Director of Operations,Logistics,670,SE,https://linkedin.com/in/saralindqvist
+name,company,email,phone,role,company_size,industry,employee_count,source
+Alice Chen,Vertexio,alice.chen@vertexio.com,3471234567,VP of Sales,medium,SaaS,320,csv
+Marco Rossi,BridgeLabs,m.rossi@bridgelabs.io,3929876543,Head of Growth,small,Fintech,85,csv
+Priya Mehta,CloudNest,priya.mehta@cloudnest.co,9123456780,CTO,medium,DevTools,210,csv
+James Okafor,TradePulse,j.okafor@tradepulse.ng,8031234567,Founder,startup,E-Commerce,12,csv
+Sara Lindqvist,NordicFlow,sara.l@nordicflow.se,4701234567,Director of Operations,large,Logistics,670,csv
